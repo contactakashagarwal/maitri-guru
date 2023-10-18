@@ -1,20 +1,25 @@
 {
-  "name": "maitri-guru",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
-  },
-  "dependencies": {
-    "react": "^18",
-    "react-dom": "^18",
-    "next": "13.5.5"
-  },
-  "devDependencies": {
-    "eslint": "^8",
-    "eslint-config-next": "13.5.5"
-  }
+    "name": "maitri-guru",
+    "version": "0.1.0",
+    "private": true,
+    "scripts": {
+        "start": "npm run dev & npm run start-bot-server",
+        "dev": "next dev",
+        "start-bot-server": "node ./bot-engine/index.js",
+        "build": "next build",
+        "lint": "next lint"
+    },
+    "dependencies": {
+        "react": "^18",
+        "react-dom": "^18",
+        "next": "13.5.5",
+        "cors": "^2.8.5",
+        "express": "^4.18.2",
+        "node-nlp": "^4.27.0",
+        "uuid": "^9.0.1"
+    },
+    "devDependencies": {
+        "eslint": "^8",
+        "eslint-config-next": "13.5.5"
+    }
 }
