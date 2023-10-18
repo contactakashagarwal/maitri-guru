@@ -1,9 +1,9 @@
 # MaitriGuru
 
 ## This is a AI powered chatbot that helps you with your post marital psycological conversation related queries. 
-#### Maitri ~ Friend and Guru ~ Guide
+``Maitri = Friend`` and ``Guru = Guide``
 
-### Snapshot
+## Snapshot
 
 ![image](https://github.com/contactakashagarwal/maitri-guru/assets/62435205/e42988d4-8952-4ac1-ba7c-acb691b7dec4)
 
