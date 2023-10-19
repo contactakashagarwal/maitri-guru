@@ -11,8 +11,6 @@ const HomePage = (props) => {
     }, [chatMessages.length]);
 
     const addMessage = (message, isUser) => {
-        // const messages = [...chatMessages];
-        // messages.push({ message, isUser });
         message = message ? message : 'Can you please rephrase your query !';
         setChatMessages((prevState) => {
             return [...prevState, { message, isUser }];
@@ -32,15 +30,7 @@ const HomePage = (props) => {
     };
 
     const sendMessage = () => {
-        // Add logic to send it to the bot engine
-        // get response from engine and add that also in reponse input
-
         addMessage(userInput, true);
-        // Simulate a bot response (you can replace this with actual bot logic)
-        // setTimeout(() => {
-        //     const botResponse = 'Bot: Thanks for your message!';
-        //     addMessage(botResponse, false);
-        // }, 2000);
 
         processMessage(userInput).then((response) => {
             console.log(response);
