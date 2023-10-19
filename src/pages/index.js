@@ -1,9 +1,14 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { v4 as uuid } from 'uuid';
 
 const HomePage = (props) => {
     const [userInput, setUserInput] = useState('');
     const [chatMessages, setChatMessages] = useState([{ message: 'Hello !', isUser: false }]);
+
+    useEffect(() => {
+        const chatMessagesDiv = document.querySelector('.chat-messages');
+        chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight;
+    }, [chatMessages.length]);
 
     const addMessage = (message, isUser) => {
         // const messages = [...chatMessages];
@@ -12,8 +17,6 @@ const HomePage = (props) => {
         setChatMessages((prevState) => {
             return [...prevState, { message, isUser }];
         });
-        const chatMessagesDiv = document.querySelector('.chat-messages');
-        chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight;
     };
 
     const processMessage = (message) => {
