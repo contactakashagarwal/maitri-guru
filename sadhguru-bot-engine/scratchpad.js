@@ -8,3 +8,9 @@
 // console.log(rs);
 // console.log(`Your cluster returned ${rs.rowLength} row(s)`);
 // await this.astraDbClient.shutdown();
+
+const resolve = require('path').resolve;
+const ASTRA_DB_SECURE_BUNDLE_PATH =
+    '../../../Chatbot/maitri-guru/maitri-guru/sadhguru-bot-engine/asset/secure-connect-transcripts-vector.zip';
+
+console.log(resolve(ASTRA_DB_SECURE_BUNDLE_PATH));

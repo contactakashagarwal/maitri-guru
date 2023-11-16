@@ -6,11 +6,9 @@ const { SearchApiLoader } = require('langchain/document_loaders/web/searchapi');
 const { ChatAnthropic } = require('langchain/chat_models/anthropic');
 const { PromptTemplate } = require('langchain/prompts');
 const { Credentials } = require('./credentials');
+const { Config } = require('./config');
 
 class VideoTranscript {
-    videosToFetch = 10;
-    sadhGuruChannelId = 'UCcYzLCs3zrQIBVHYA1sK2sw';
-
     constructor() {}
 
     async getVideoTranscripts() {
@@ -21,8 +19,9 @@ class VideoTranscript {
             const currVideo = sadhguruVideos[i];
             const transcript = await this.getRawTranscript(currVideo.videoId);
             // const summarizedTranscript = await this.summarizeTranscript(transcript);
-
-            videoTranscripts.push({ ...currVideo, transcript: transcript });
+            if (transcript) {
+                videoTranscripts.push({ ...currVideo, transcript: transcript });
+            }
         }
 
         return videoTranscripts;
@@ -36,13 +35,13 @@ class VideoTranscript {
                 .filter((text) => text != '')
                 .join(' ');
         } catch (err) {
-            console.log(err);
+            // console.log(err);
             return '';
         }
     }
 
     async getSadhguruVideos() {
-        const urlToFetchSadhguruVideos = `https://www.googleapis.com/youtube/v3/search?key=${Credentials.YOUTUBE_API_KEY}&channelId=${this.sadhGuruChannelId}&part=snippet,id&order=date&maxResults=${this.videosToFetch}`;
+        const urlToFetchSadhguruVideos = `https://www.googleapis.com/youtube/v3/search?key=${Credentials.YOUTUBE_API_KEY}&channelId=${Config.SADHGURU_CHANNEL_ID}&part=snippet,id&order=date&maxResults=${Config.VIDEOS_TO_FETCH}`;
         const response = await fetch(urlToFetchSadhguruVideos);
         const youtubeResponse = await response.json();
         const sadhguruVideos = youtubeResponse.items;

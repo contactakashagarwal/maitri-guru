@@ -1,6 +1,6 @@
 const { Credentials } = require('./credentials');
 const { VectorDataRepository } = require('./data-repository');
-const { DataEmbedding } = require('./openai-embeddings');
+const { DataEmbedding } = require('./embeddings');
 const { VideoTranscript } = require('./youtube-transcript-parser');
 const { HuggingFaceInferenceEmbeddings } = require('langchain/embeddings/hf');
 
@@ -21,7 +21,7 @@ class Main {
         const vectorStore = await dataRepository.storeVectorizeData(sadhguruTranscripts, hfEmbedding);
 
         console.log('\n\n***********Question being answered*********');
-        const result = await vectorStore.similaritySearch('What tip would you give to Indian Cricket Team', 2);
+        const result = await vectorStore.similaritySearch('What are your views on Diwali', 2);
         console.log(result);
     }
 }
