@@ -1,0 +1,11 @@
+[connection]
+hostname = d6236de0-9bb5-4e14-9700-940f02867472-us-east1.db.astra.datastax.com
+port = 29042
+ssl = true
+
+[ssl]
+validate = true
+certfile = ./ca.crt
+userkey = ./key
+usercert = ./cert
+version = TLS
