@@ -1,6 +1,10 @@
 const { OpenAI } = require('openai');
 const { HuggingFaceInferenceEmbeddings } = require('langchain/embeddings/hf');
 
+/**
+ * Test file not being used
+ */
+
 const texts = [
     'How do I get a replacement Medicare card?',
     'What is the monthly premium for Medicare Part B?',
@@ -48,11 +52,11 @@ class DataEmbedding {
 
         // const embeddings = await response.json();
 
-        const em = new HuggingFaceInferenceEmbeddings({
+        const hfEmbeffing = new HuggingFaceInferenceEmbeddings({
             apiKey: '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',
             model: 'sentence-transformers/all-MiniLM-L6-v2',
         });
-        const embeddings = await em._embed(texts);
+        const embeddings = await hfEmbeffing._embed(texts);
 
         console.log(embeddings);
     }

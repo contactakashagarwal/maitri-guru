@@ -7,10 +7,10 @@ const { ChatAnthropic } = require('langchain/chat_models/anthropic');
 const { PromptTemplate } = require('langchain/prompts');
 const { Credentials } = require('./credentials');
 const { Config } = require('./config');
+const axios = require('axios');
+const { HuggingFace } = require('huggingface');
 
 class VideoTranscript {
-    constructor() {}
-
     async getVideoTranscripts() {
         const videoTranscripts = [];
         const sadhguruVideos = await this.getSadhguruVideos();
@@ -18,9 +18,9 @@ class VideoTranscript {
         for (let i = 0; i < sadhguruVideos.length; i++) {
             const currVideo = sadhguruVideos[i];
             const transcript = await this.getRawTranscript(currVideo.videoId);
-            // const summarizedTranscript = await this.summarizeTranscript(transcript);
             if (transcript) {
-                videoTranscripts.push({ ...currVideo, transcript: transcript });
+                const summarizedTranscript = await this.summarizeTranscriptAnyScale(transcript);
+                videoTranscripts.push({ ...currVideo, transcript: summarizedTranscript });
             }
         }
 
@@ -33,7 +33,7 @@ class VideoTranscript {
             return transcript
                 .map((data) => this.purify(data.text))
                 .filter((text) => text != '')
-                .join(' ');
+                .join('\n');
         } catch (err) {
             // console.log(err);
             return '';
@@ -53,83 +53,99 @@ class VideoTranscript {
         }));
     }
 
-    // async summarizeTranscript(transcript) {
-    //     // const splitter = new TokenTextSplitter({
-    //     //     chunkSize: 1000,
-    //     //     chunkOverlap: 250,
-    //     // });
+    async summarizeTranscriptHuggingFace(transcript) {
+        const hf = new HuggingFace(Credentials.HUGGING_FACE_API_KEY);
+        const summarization = await hf.summarization({ inputs: transcript, model: 'Falconsai/text_summarization' });
+        console.log(summarization.summary_text);
+        return summarization.summary_text;
+    }
 
-    //     // const docsSummary = await splitter.splitDocuments(docs);
-    //     // console.log(docsSummary);
+    async summarizeTranscriptAnyScale(transcript) {
+        const summaryTemplate = `
+                You are an expert in summarizing YouTube videos.
+                Your goal is to create a summary of sadhguru's preachings.
+                Below you find the transcript of a sadhguru's video:
+                --------
+                ${transcript}
+                --------
 
-    //     const llmSummary = new ChatAnthropic({
-    //         modelName: 'claude-2',
-    //         temperature: 0.3,
-    //     });
+                The transcript of the video will also be used as the basis for a question and answer bot.
+                Provide some examples questions and answers that could be asked about the video. Make these questions very specific.
 
-    //     const summaryTemplate = `
-    //         You are an expert in summarizing YouTube videos.
-    //         Your goal is to create a summary of a podcast.
-    //         Below you find the transcript of a podcast:
-    //         --------
-    //         {text}
-    //         --------
+                Total output will be a summary of the video and a list of example questions the user could ask of the video.
+                I don't want example of questions that could be asked about the video.
+                There should be line break after each question answer pair.
 
-    //         The transcript of the podcast will also be used as the basis for a question and answer bot.
-    //         Provide some examples questions and answers that could be asked about the podcast. Make these questions very specific.
+                SUMMARY
 
-    //         Total output will be a summary of the video and a list of example questions the user could ask of the video.
+                QUESTIONS AND ANSWERS (with Q and A)
+                `;
 
-    //         SUMMARY AND QUESTIONS:
-    //         `;
+        const url = 'https://api.endpoints.anyscale.com/v1/chat/completions';
+        const options = {
+            method: 'POST',
+            url: url,
+            headers: {
+                'content-type': 'application/json',
+                Authorization: `Bearer ${Credentials.ANYSCALE_API_TOKEN}`,
+            },
+            data: {
+                model: 'codellama/CodeLlama-34b-Instruct-hf',
+                temperature: 0.7,
+                messages: [
+                    { role: 'system', content: 'You are a helpful assistant.' },
+                    { role: 'user', content: summaryTemplate },
+                ],
+            },
+        };
 
-    //     const SUMMARY_PROMPT = PromptTemplate.fromTemplate(summaryTemplate);
+        try {
+            const response = await axios.request(options);
+            const llmResponse = response.data.choices[0].message.content;
 
-    //     const summaryRefineTemplate = `
-    //         You are an expert in summarizing YouTube videos.
-    //         Your goal is to create a summary of a podcast.
-    //         We have provided an existing summary up to a certain point: {existing_answer}
-
-    //         Below you find the transcript of a podcast:
-    //         --------
-    //         {text}
-    //         --------
-
-    //         Given the new context, refine the summary and example questions.
-    //         The transcript of the podcast will also be used as the basis for a question and answer bot.
-    //         Provide some examples questions and answers that could be asked about the podcast. Make
-    //         these questions very specific.
-    //         If the context isn't useful, return the original summary and questions.
-    //         Total output will be a summary of the video and a list of example questions the user could ask of the video.
-
-    //         SUMMARY AND QUESTIONS:
-    //         `;
-
-    //     const SUMMARY_REFINE_PROMPT = PromptTemplate.fromTemplate(summaryRefineTemplate);
-
-    //     // const huggingFaceLlm = new HuggingFaceInference({
-    //     //     apiKey: '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',
-    //     //     temperature: 0,
-    //     // });
-
-    //     const summarizeChain = loadSummarizationChain(llmSummary, {
-    //         type: 'refine',
-    //         verbose: true,
-    //         questionPrompt: SUMMARY_PROMPT,
-    //         refinePrompt: SUMMARY_REFINE_PROMPT,
-    //     });
-
-    //     const summary = await summarizeChain.run([{ pageContent: transcript }]);
-
-    //     console.log(`Summary ::`, summary);
-    //     return summary;
-    // }
+            return this.formatLLMResponse(llmResponse.trim());
+        } catch (error) {
+            console.error(error);
+        }
+    }
 
     purify(text) {
-        return text.replace('[Music]', '');
+        return text.replace('[Music]', '').replace('[Applause]', '');
+    }
+
+    formatLLMResponse(llmResponse) {
+        // Define a regular expression pattern to match the summary content
+        const regexSummary = /SUMMARY:(.+?)QUESTIONS AND ANSWERS:/s;
+
+        // Extract the summary using the regular expression
+        const summaryMatch = llmResponse.match(regexSummary);
+
+        // Check if a match is found and extract the summary content
+        const summary = summaryMatch ? summaryMatch[1].trim() : 'Summary not found.';
+
+        // Log the extracted summary
+        // console.log(`Summary => `, summary);
+
+        // Define a regular expression pattern to match questions and answers
+        const regexQnA = /Q: (.+?)\nA: (.+?)(?=\n\n|$)/gs;
+
+        // Extract questions and answers using the regular expression
+        const matches = Array.from(llmResponse.matchAll(regexQnA));
+        // Create an array of objects with questions and answers
+        const qaPairs = matches.map((match) => ({
+            question: match[1].trim(),
+            answer: match[2].trim(),
+        }));
+
+        // Log the extracted questions and answers
+        // qaPairs.forEach((qa, index) => {
+        //     console.log(`Question ${index + 1}: ${qa.question}`);
+        //     console.log(`Answer ${index + 1}: ${qa.answer}`);
+        //     console.log('---');
+        // });
+
+        return { summary, qaPairs: qaPairs };
     }
 }
 
 module.exports.VideoTranscript = VideoTranscript;
-
-// new VideoTranscript().getVideoTranscripts();

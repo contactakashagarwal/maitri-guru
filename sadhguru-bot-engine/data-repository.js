@@ -16,7 +16,7 @@ class VectorDataRepository {
         keyspace: Credentials.ASTRA_DB_KEYSPACE,
         dimensions: 384,
         table: 'transcripts',
-        indices: [{ name: 'title', value: '(title)' }],
+        indices: [{ name: 'question', value: '(question)' }],
         primaryKey: {
             name: 'id',
             type: 'int',
@@ -27,25 +27,38 @@ class VectorDataRepository {
                 type: 'text',
             },
             {
-                name: 'description',
+                name: 'question',
+                type: 'text',
+            },
+            {
+                name: 'summary',
                 type: 'text',
             },
         ],
     };
 
-    async storeVectorizeData(transcriptsData, embedding) {
+    async storeVectorizeData(videosData, embedding) {
         let count = 1;
-        const transcripts = transcriptsData.map((data) => data.transcript);
-        const metadatas = transcriptsData.map((data) => ({
-            id: count++,
-            title: data.title ?? 't',
-            description: data.description ?? 'd',
-        }));
+        const metadatas = [];
+        videosData.forEach((video) => {
+            video.transcript.qaPairs.forEach((qa) => {
+                const metadata = {
+                    id: count++,
+                    title: video.title,
+                    question: qa.question,
+                    summary: video.transcript.summary,
+                };
+                metadatas.push(metadata);
+            });
+        });
 
-        console.log(metadatas);
-
-        const vectorStore = await CassandraStore.fromTexts(transcripts, metadatas, embedding, this.astraDbConfig);
+        const answers = videosData.flatMap((v) => v.transcript.qaPairs.map((qa) => qa.answer));
+        const vectorStore = await CassandraStore.fromTexts(answers, metadatas, embedding, this.astraDbConfig);
         return vectorStore;
+    }
+
+    getVectorStore(embedding) {
+        return new CassandraStore(embedding, this.astraDbConfig);
     }
 }
 
